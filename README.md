@@ -212,10 +212,3 @@ This triggers a refetch.
 | `useMutation` | Post/put/delete | Add new todo |
 | `invalidateQueries` | Refresh related queries | Refresh todos after posting |
 | Optimistic updates | Update UI before server | Add "!" to todo title instantly |
-
-
-
-
-
-
-
