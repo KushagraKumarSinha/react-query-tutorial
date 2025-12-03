@@ -1,81 +1,156 @@
-📘 TanStack Query — Full Notes & Demo Project (My Reference Guide)
+<h1 align="center">TanStack Query — Full Notes & Demo Project (My Reference Guide)</h1>
 
-This project is a complete walkthrough of the most important parts of TanStack Query (React Query). It serves as my personal reference guide.
+This project is a simple but complete walkthrough of the most important parts of TanStack Query (React Query), based on the topics I needed to learn:
 
-Fetching data
+• Fetching data
 
-Polling (refetch intervals)
+• Polling (refetch intervals)
 
-Fetching data by ID
+• Fetching data by ID
 
-Posting new data (mutations)
+• Posting new data (mutations)
 
-Optimistic updates
+• Optimistic updates
 
-Invalidating (referring to) other queries
+• Referring to (invalidating) other queries
 
-1. Setting Up TanStack Query
+This README is meant to act as my personal notes so I can come back later and refresh myself instantly.
 
-To use TanStack Query, wrap the app in a QueryClientProvider.
+<hr>
 
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+### 1. Setting Up TanStack Query
 
-const queryClient = new QueryClient();
+To use TanStack Query, we wrap the app in a `QueryClientProvider`.
+```jsx
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
-<QueryClientProvider client={queryClient}>
-  <App />
-</QueryClientProvider>
+const queryClient = new QueryClient()
 
-2. Fetching Data (Basic useQuery)
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <Todos />
+    </QueryClientProvider>
+  )
+}
+```
+This gives the whole app access to caching, queries, mutations, etc.
 
-Fetch all todos:
+<hr>
 
+### 2. Fetching Data (Basic useQuery)
+
+Fetching all todos:
+```jsx
 useQuery({
   queryKey: ["todos"],
   queryFn: fetchTodos
 });
+```
+**Important points:**
 
+• `queryKey` = identifier for caching
 
-From the demo:
+• `queryFn` = function that fetches data
 
+• React Query auto-caches, auto-refetches, and keeps stale data
+
+**From the demo:**
+
+```jsx
 const { data: todos } = useQuery({
   queryKey: ["todos"],
   queryFn: fetchTodos
 });
+```
 
-3. Polling (Refetch Every X ms)
+<hr>
+
+### 3. Polling (Refetch Every X ms)
+
+You can make a query refetch automatically using refetchInterval
+
+```jsx
 useQuery({
   queryKey: ["todos"],
   queryFn: fetchTodos,
-  refetchInterval: 5000
+  refetchInterval: 5000 // fetch every 5 seconds
 });
+```
 
-4. Fetching Data by ID
+This creates live updating data without WebSockets
+
+<hr>
+
+### 4. Fetching Data by ID
+
+We fetch by ID using another query that depends on 'selectedId'
+
+```jsx
 useQuery({
   queryKey: ["todo", selectedId],
   queryFn: () => fetchTodoById(selectedId),
   enabled: !!selectedId
 });
+```
+Why `enabled`?
+Because queries normally auto-run.
+`enabled: false` until we actually select an ID
 
+Example in UI:
 
-Example UI trigger:
-
+```jsx
 <button onClick={() => setSelectedId(t.id)}>Fetch by ID</button>
+```
 
-5. Posting Data (Mutation)
-const mutation = useMutation({
+<hr>
+
+### 5. Posting Data (Mutation)
+
+Mutations are used to change server data, like POST, PUT, DELETE.
+
+```jsx
+useMutation({
   mutationFn: (data) => postTodo(data),
   onSuccess: () => {
     queryClient.invalidateQueries(["todos"]);
   }
 });
+```
 
+Why `invalidateQueries`?
 
-Usage:
+It tells React Query: “This data is outdated — refetch it.”
 
-mutation.mutate({ title: newTodoTitle });
+Example usage:
 
-6. Optimistic Updates
+```jsx
+postMutation.mutate({ title: newTodoTitle });
+```
+
+<hr>
+
+### 6. Optimistic Updates
+
+This is one of the most powerful features.
+
+It makes UI update instantly, before the server responds.
+
+**Steps:**
+
+1) Cancel outgoing refetches
+
+2) Snapshot previous cache
+
+3) Immediately update UI
+
+4) Roll back on error
+
+5) Refetch final data
+
+**From the project:**
+
+```jsx
 onMutate: async ({ id, title }) => {
   await queryClient.cancelQueries(["todos"]);
 
@@ -88,49 +163,57 @@ onMutate: async ({ id, title }) => {
   );
 
   return { previousTodos };
-}
+},
+```
 
+If the server fails, we undo the optimistic update:
 
-Rollback:
-
-onError: (_error, _vars, ctx) => {
+```jsx
+onError: (_err, _vars, ctx) => {
   queryClient.setQueryData(["todos"], ctx.previousTodos);
 };
+```
 
+And always finalize:
 
-Finalize:
-
+```jsx
 onSettled: () => {
   queryClient.invalidateQueries(["todos"]);
 };
+```
 
-7. Invalidating Other Queries
+<hr>
+
+### 7. Referring To Other Queries (invalidateQueries)
+
+Sometimes a mutation affects data in another query.
+
+Example:
+Posting a new todo should update the list of todos.
+
+**So we invalidate:**
+
+```jsx
 queryClient.invalidateQueries(["todos"]);
+```
+This triggers a refetch.
 
-8. Summary
-Concept	Meaning	Example
-useQuery	Fetch + cache data	Fetch all todos
-refetchInterval	Polling	Refresh every 5 seconds
-enabled	Conditional query	Fetch only when ID selected
-useMutation	POST/PUT/DELETE	Add new todo
-invalidateQueries	Refresh related data	Refetch todos
-Optimistic updates	Instant UI update	Edit todo title immediately
-9. Running the Project
+<hr>
 
-Install:
+### 8. Summary — What I Learned
 
-npm install @tanstack/react-query
+| Concept | Meaning | Example from this project |
+| :--- | :--- | :--- |
+| `useQuery` | Fetch and cache data | Fetch all todos |
+| `refetchInterval` | Polling | Refresh todos every 5s |
+| `enabled` | Conditional queries | Only fetch todo if ID is selected |
+| `useMutation` | Post/put/delete | Add new todo |
+| `invalidateQueries` | Refresh related queries | Refresh todos after posting |
+| Optimistic updates | Update UI before server | Add "!" to todo title instantly |
 
 
-Run:
 
-npm run dev
 
-10. What This Project Covers
-Topic	Implemented With
-Fetch data	useQuery(fetchTodos)
-Polling	refetchInterval: 5000
-Fetch by ID	useQuery(["todo", id])
-Posting data	useMutation(postTodo)
-Optimistic updates	onMutate, onError, onSettled
-Invalidating queries	invalidateQueries(["todos"])
+
+
+
