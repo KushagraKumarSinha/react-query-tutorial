@@ -16,6 +16,8 @@ This project is a simple but complete walkthrough of the most important parts of
 
 This README is meant to act as my personal notes so I can come back later and refresh myself instantly.
 
+Reference video: https://www.youtube.com/watch?v=e74rB-14-m8
+
 <hr>
 
 ### 1. Setting Up TanStack Query
